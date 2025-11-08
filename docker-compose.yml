@@ -35,7 +35,8 @@ services:
       SESSION_SECRET: ${SESSION_SECRET}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-change-me-now}
-      DOCKER_HOST: http://socket-proxy:2375
+      # Use a different variable name to prevent overriding the host's DOCKER_HOST
+      DOCKER_PROXY_URL: http://socket-proxy:2375
       NGINX_SITES_DIR: /etc/nginx/sites-enabled
       NODE_ENV: production
     volumes:

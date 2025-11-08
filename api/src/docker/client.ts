@@ -1,6 +1,7 @@
 import { fetch } from 'undici';
 
-const dockerHost = process.env.DOCKER_HOST || 'http://socket-proxy:2375';
+// Use a distinct environment variable for the socket proxy to avoid conflicts
+const dockerHost = process.env.DOCKER_PROXY_URL || 'http://socket-proxy:2375';
 
 async function handleResponse(res: Response) {
   if (!res.ok) {

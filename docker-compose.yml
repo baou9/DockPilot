@@ -62,5 +62,21 @@ services:
     depends_on:
       - api
 
+  haproxy:
+    image: haproxy:3.0
+    restart: unless-stopped
+    depends_on:
+      - ui
+      - api
+      - socket-proxy
+    ports:
+      - "80:80"
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      # Uncomment the next line if you enable server-state-file in haproxy.cfg
+      # - haproxy_state:/var/lib/haproxy
+
 volumes:
   pgdata:
+  # Uncomment if enabling HAProxy server state persistence
+  # haproxy_state:

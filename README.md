@@ -12,7 +12,52 @@ DockPilot is a secure dashboard for monitoring and curating Dockerized applicati
 - Optional AI assistance for anomaly hints
 - Nuxt 4 dashboard with responsive cards, category filtering, icon uploads, and theme toggle
 
+## Installation
+
+Follow the steps below to install and run DockPilot from a clean machine:
+
+1. **Install prerequisites**
+   - Docker Engine **24+** with the Docker Compose plugin (`docker compose` command).
+   - Node.js **22** and npm (needed only for local development outside the Compose stack).
+   - `psql` client (e.g., via PostgreSQL packages) to apply the schema.
+2. **Clone the repository**
+   ```bash
+   git clone https://github.com/<your-org>/DockPilot.git
+   cd DockPilot
+   ```
+3. **Provision environment variables**
+   ```bash
+   cp .env.example .env
+   ```
+   Edit `.env` and provide secure values for `SESSION_SECRET`, `ADMIN_PASSWORD`, database URL, and any optional AI credentials.
+4. **Prepare PostgreSQL**
+   - If you already have a PostgreSQL instance, ensure the database defined by `DATABASE_URL` exists and is reachable from the Docker host.
+   - Otherwise, keep the bundled `postgres` service enabled in `docker-compose.yml` (default configuration).
+5. **Apply the database schema**
+   ```bash
+   psql "$DATABASE_URL" -f db/schema.pg.sql
+   ```
+   This initializes tables, triggers, and optional storage history support.
+6. **Build and start the Docker Compose stack**
+   ```bash
+   docker compose up -d --build
+   ```
+   The command launches the docker-socket-proxy, API, UI, and (optionally) PostgreSQL services.
+7. **Verify service health**
+   ```bash
+   docker compose ps
+   docker compose logs api
+   ```
+   Confirm all containers are running without errors.
+8. **Access DockPilot**
+   - Browse to `http://localhost:3000` (or your reverse proxy URL).
+   - Log in using `ADMIN_USERNAME` / `ADMIN_PASSWORD` from `.env` and complete the forced password change.
+
+After installation, optional development workflows (e.g., running `npm run dev` inside `api` and `ui`) remain available.
+
 ## Getting Started
+
+If you already have the prerequisites and configuration in place, the condensed setup is:
 
 1. Apply the database schema:
    ```bash

@@ -55,6 +55,20 @@ Follow the steps below to install and run DockPilot from a clean machine:
 
 After installation, optional development workflows (e.g., running `npm run dev` inside `api` and `ui`) remain available.
 
+### Rebuilding after dependency or Dockerfile updates
+
+If you update container dependencies (for example, adjusting `api/package.json` or Dockerfiles), rebuild the stack to ensure the
+changes take effect:
+
+```bash
+docker compose down
+docker compose build --no-cache
+docker compose up -d
+```
+
+The `--no-cache` flag forces Docker to refresh layer caches so dependency version changes—like the Fastify helmet pin—are picked
+up correctly.
+
 ## Getting Started
 
 If you already have the prerequisites and configuration in place, the condensed setup is:

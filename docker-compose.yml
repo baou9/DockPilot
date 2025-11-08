@@ -1,5 +1,6 @@
-
-version: '3.9'
+#
+# Compose version is optional with Compose V2; removing it avoids deprecation warnings.
+# version: '3.9'
 
 services:
   socket-proxy:

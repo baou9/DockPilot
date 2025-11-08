@@ -1,0 +1,31 @@
+{
+  "name": "dockpilot-api",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node build/index.js",
+    "lint": "eslint --ext .ts src"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^9.3.1",
+    "@fastify/helmet": "^12.3.0",
+    "@fastify/multipart": "^8.1.0",
+    "@fastify/rate-limit": "^10.1.0",
+    "@fastify/secure-session": "^7.4.0",
+    "@fastify/static": "^7.0.1",
+    "bcryptjs": "^2.4.3",
+    "fastify": "^4.26.2",
+    "fastify-plugin": "^4.5.1",
+    "pg": "^8.11.5",
+    "undici": "^6.13.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.5.1",
+    "eslint": "^9.8.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.4.5"
+  }
+}

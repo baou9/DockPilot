@@ -1,0 +1,8 @@
+node_modules
+uploads
+.env
+api/node_modules
+ui/node_modules
+api/build
+.DS_Store
+npm-debug.log*

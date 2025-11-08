@@ -43,7 +43,7 @@ services:
       - ./uploads:/usr/src/app/uploads
       - /etc/nginx/sites-enabled:/etc/nginx/sites-enabled:ro
     ports:
-      - "3001:3000"
+      - "6453:6452"
     depends_on:
       - postgres
       - socket-proxy
@@ -53,12 +53,12 @@ services:
       context: ./ui
       dockerfile: Dockerfile
     environment:
-      NUXT_PUBLIC_API_BASE: http://api:3000
+      NUXT_PUBLIC_API_BASE: http://api:6452
       NODE_ENV: production
     volumes:
       - ./ui:/usr/src/app
     ports:
-      - "3000:3000"
+      - "6452:6452"
     depends_on:
       - api
 

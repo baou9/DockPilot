@@ -50,7 +50,7 @@ Follow the steps below to install and run DockPilot from a clean machine:
    ```
    Confirm all containers are running without errors.
 8. **Access DockPilot**
-   - Browse to `http://localhost:3000` (or your reverse proxy URL).
+   - Browse to `http://localhost:6452` (or your reverse proxy URL).
    - Log in using `ADMIN_USERNAME` / `ADMIN_PASSWORD` from `.env` and complete the forced password change.
 
 After installation, optional development workflows (e.g., running `npm run dev` inside `api` and `ui`) remain available.
@@ -76,8 +76,8 @@ If you already have the prerequisites and configuration in place, the condensed 
 | ------- | ----------- |
 | `socket-proxy` | Secure proxy to Docker Engine (no direct docker.sock mounts). |
 | `postgres` | PostgreSQL 16 database. |
-| `api` | Fastify backend on port 3000 (exposed as 3001 locally). |
-| `ui` | Nuxt 4 frontend on port 3000. |
+| `api` | Fastify backend on port 6452 (exposed as 6453 locally). |
+| `ui` | Nuxt 4 frontend on port 6452. |
 
 ## Environment Variables
 

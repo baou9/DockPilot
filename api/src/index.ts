@@ -87,5 +87,5 @@ app.get('/status', async () => ({
   ai: isAiEnabled()
 }));
 
-const port = Number(process.env.PORT || 3000);
+const port = Number(process.env.PORT || 6452);
 await app.listen({ port, host: '0.0.0.0' });

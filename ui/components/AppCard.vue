@@ -17,6 +17,7 @@
       <span>CPU: <strong>{{ toPercent(app.cpu_percent) }}</strong></span>
       <span>Memory: <strong>{{ toPercent(app.memory_percent) }}</strong></span>
       <span>Restarts: <strong>{{ app.restarts ?? 0 }}</strong></span>
+      <span>Storage: <strong>RW {{ fmtBytes(app.size_rw) }}, Vol {{ fmtBytes(app.volumes_size) }}</strong></span>
     </div>
     <div class="categories" v-if="app.categories?.length">
       <span v-for="cat in app.categories" :key="cat.id" class="chip">{{ cat.name }}</span>
@@ -37,6 +38,8 @@
 </template>
 
 <script setup lang="ts">
+import { fmtBytes } from '~/utils/format';
+
 const props = defineProps<{
   app: any;
 }>();
@@ -99,5 +102,17 @@ const openApp = () => {
 
 .ports {
   font-size: 13px;
+}
+
+.card-metrics {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.card-metrics strong {
+  color: var(--text);
 }
 </style>

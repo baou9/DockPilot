@@ -1,5 +1,5 @@
 import { dockerGet } from './client.js';
-import { withTransaction } from '../db.js';
+import { q, withTransaction } from '../db.js';
 import { readNginxMappings } from './nginx-map.js';
 
 type DockerPort = {
@@ -18,6 +18,28 @@ type DockerContainer = {
   RestartCount?: number;
   Labels: Record<string, string>;
   Ports: DockerPort[];
+};
+
+type DockerMount = {
+  Type: 'volume' | 'bind' | 'tmpfs' | string;
+  Name?: string;
+  Source?: string;
+  Destination?: string;
+};
+
+type DockerContainerWithSize = DockerContainer & {
+  Mounts?: DockerMount[];
+  SizeRw?: number;
+  SizeRootFs?: number;
+};
+
+type DockerVolumeUsage = {
+  Name?: string;
+  UsageData?: { Size?: number };
+};
+
+type DockerSystemDf = {
+  Volumes?: DockerVolumeUsage[];
 };
 
 type DockerStats = {
@@ -40,7 +62,8 @@ type DockerStats = {
   };
 };
 
-let timer: NodeJS.Timeout | undefined;
+let statsTimer: NodeJS.Timeout | undefined;
+let storageTimer: NodeJS.Timeout | undefined;
 
 function calcCpuPercent(stats: DockerStats) {
   const cpuDelta = stats.cpu_stats.cpu_usage.total_usage - stats.precpu_stats.cpu_usage.total_usage;
@@ -59,7 +82,7 @@ function calcMemPercent(stats: DockerStats) {
   return (stats.memory_stats.usage / stats.memory_stats.limit) * 100;
 }
 
-async function collectOnce() {
+async function collectStats() {
   const containers = await dockerGet<DockerContainer[]>('/containers/json', { all: 1 });
   const nginxMappings = await readNginxMappings();
 
@@ -151,19 +174,111 @@ async function collectOnce() {
   }
 }
 
+async function collectStorageSizes() {
+  const containers = await dockerGet<DockerContainerWithSize[]>('/containers/json', { all: 1, size: 1 });
+  let df: DockerSystemDf = {};
+  try {
+    df = await dockerGet<DockerSystemDf>('/system/df');
+  } catch (err) {
+    console.error('Failed to fetch docker system df', err);
+  }
+
+  const volumeSizeMap = new Map<string, number>();
+  for (const volume of df.Volumes || []) {
+    if (!volume?.Name) continue;
+    const size = volume.UsageData?.Size;
+    if (typeof size === 'number') {
+      volumeSizeMap.set(volume.Name, size);
+    }
+  }
+
+  for (const container of containers) {
+    const name = container.Names?.[0]?.replace(/^\//, '') || container.Id.slice(0, 12);
+    const sizeRw = typeof container.SizeRw === 'number' ? container.SizeRw : null;
+    const sizeRootfs = typeof container.SizeRootFs === 'number' ? container.SizeRootFs : null;
+
+    const mounts = container.Mounts || [];
+    const volumeMounts = mounts.filter((m) => m.Type === 'volume' && m.Name);
+    let volumesSize: number | null = null;
+    if (volumeMounts.length === 0) {
+      volumesSize = 0;
+    } else {
+      let total = 0;
+      let hasData = false;
+      for (const mount of volumeMounts) {
+        if (!mount.Name) continue;
+        if (volumeSizeMap.has(mount.Name)) {
+          total += volumeSizeMap.get(mount.Name)!;
+          hasData = true;
+        }
+      }
+      volumesSize = hasData ? total : null;
+    }
+
+    await q(
+      `INSERT INTO apps (container_id, name, image, size_rw, size_rootfs, volumes_size)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (container_id) DO UPDATE SET
+         name = EXCLUDED.name,
+         image = EXCLUDED.image,
+         size_rw = EXCLUDED.size_rw,
+         size_rootfs = EXCLUDED.size_rootfs,
+         volumes_size = EXCLUDED.volumes_size,
+         updated_at = now()`,
+      [
+        container.Id,
+        name,
+        container.Image || null,
+        sizeRw,
+        sizeRootfs,
+        volumesSize
+      ]
+    );
+
+    if (sizeRw !== null || sizeRootfs !== null || volumesSize !== null) {
+      try {
+        await q(
+          `INSERT INTO app_storage (app_id, size_rw, size_rootfs, volumes_size)
+           SELECT id, $2, $3, $4 FROM apps WHERE container_id = $1`,
+          [
+            container.Id,
+            sizeRw,
+            sizeRootfs,
+            volumesSize
+          ]
+        );
+      } catch (err) {
+        console.error('Failed to insert app storage history', container.Id, err);
+      }
+    }
+  }
+}
+
 export function startCollector() {
   const interval = Number(process.env.COLLECTOR_INTERVAL_MS || 30_000);
   const run = async () => {
     try {
-      await collectOnce();
+      await collectStats();
     } catch (err) {
       console.error('Collector error', err);
     }
   };
   run();
-  timer = setInterval(run, interval);
+  statsTimer = setInterval(run, interval);
+
+  const sizeInterval = Number(process.env.COLLECTOR_SIZE_INTERVAL_MS || 180_000);
+  const runStorage = async () => {
+    try {
+      await collectStorageSizes();
+    } catch (err) {
+      console.error('Storage collector error', err);
+    }
+  };
+  runStorage();
+  storageTimer = setInterval(runStorage, sizeInterval);
 }
 
 export function stopCollector() {
-  if (timer) clearInterval(timer);
+  if (statsTimer) clearInterval(statsTimer);
+  if (storageTimer) clearInterval(storageTimer);
 }

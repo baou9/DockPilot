@@ -46,6 +46,40 @@
         </form>
       </section>
       <section class="panel side-card">
+        <h3>Storage</h3>
+        <ul class="storage-stats">
+          <li>
+            <span class="label">Writable layer</span>
+            <span class="value">{{ fmtBytes(storageCurrent.size_rw) }}</span>
+          </li>
+          <li>
+            <span class="label">Root filesystem</span>
+            <span class="value">{{ fmtBytes(storageCurrent.size_rootfs) }}</span>
+          </li>
+          <li>
+            <span class="label">Volumes (sum)</span>
+            <span class="value">{{ fmtBytes(storageCurrent.volumes_size) }}</span>
+          </li>
+        </ul>
+        <small class="muted storage-note">Bind mounts expose host paths and their usage cannot be reported by Docker.</small>
+        <div v-if="storageMounts.length" class="storage-mounts">
+          <h4>Mounts</h4>
+          <ul>
+            <li v-for="mount in storageMounts" :key="mountKey(mount)">
+              <span>{{ mountLabel(mount) }}</span>
+              <span class="muted">{{ mountSizeLabel(mount) }}</span>
+            </li>
+          </ul>
+        </div>
+        <div v-if="storageHistory.length" class="storage-history">
+          <h4>Storage history</h4>
+          <ul>
+            <li v-for="entry in storageHistory" :key="entry.id">
+              <span>{{ formatDate(entry.ts) }}</span>
+              <span class="muted">RW {{ fmtBytes(entry.size_rw) }} · Root {{ fmtBytes(entry.size_rootfs) }} · Vol {{ fmtBytes(entry.volumes_size) }}</span>
+            </li>
+          </ul>
+        </div>
         <h3>Custom icon</h3>
         <input type="file" accept="image/*" @change="onIconUpload" />
         <h3>Health checks</h3>
@@ -75,6 +109,8 @@
 </template>
 
 <script setup lang="ts">
+import { fmtBytes } from '~/utils/format';
+
 const config = useRuntimeConfig();
 const router = useRouter();
 const route = useRoute();
@@ -90,6 +126,49 @@ const { data: appData, refresh: refreshApp } = await useAsyncData(`app-${id}`, (
 );
 
 const app = computed(() => appData.value ?? null);
+
+const { data: storageData, refresh: refreshStorage } = await useAsyncData(`storage-${id}`, () =>
+  $fetch(`/apps/${id}/storage?limit=50`, { baseURL: config.public.apiBase, credentials: 'include' })
+);
+
+const storageInfo = computed(() => storageData.value || { current: null, history: [], mounts: [] });
+
+const storageCurrent = computed(() => {
+  const current = storageInfo.value?.current || {};
+  return {
+    size_rw: current.size_rw ?? app.value?.size_rw ?? null,
+    size_rootfs: current.size_rootfs ?? app.value?.size_rootfs ?? null,
+    volumes_size: current.volumes_size ?? app.value?.volumes_size ?? null
+  };
+});
+
+const storageMounts = computed(() => storageInfo.value?.mounts || []);
+const storageHistory = computed(() => storageInfo.value?.history || []);
+
+const mountKey = (mount: any) => `${mount.type}:${mount.name ?? mount.source ?? mount.destination ?? ''}`;
+
+const mountLabel = (mount: any) => {
+  if (mount.type === 'volume') {
+    const destination = mount.destination ? ` → ${mount.destination}` : '';
+    return `volume (${mount.name || 'unnamed'})${destination}`;
+  }
+  if (mount.type === 'bind') {
+    const destination = mount.destination ? ` → ${mount.destination}` : '';
+    return `bind (${mount.source || 'host'})${destination}`;
+  }
+  if (mount.destination) {
+    return `${mount.type} (${mount.destination})`;
+  }
+  if (mount.source) {
+    return `${mount.type} (${mount.source})`;
+  }
+  return mount.type;
+};
+
+const mountSizeLabel = (mount: any) => {
+  if (mount.type === 'bind') return 'N/A';
+  return fmtBytes(mount.size);
+};
 
 const form = reactive({
   name: '',
@@ -140,7 +219,7 @@ const save = async () => {
       baseURL: config.public.apiBase,
       credentials: 'include'
     });
-    await Promise.all([refreshApp(), refreshHealth(), refreshAi()]);
+    await Promise.all([refreshApp(), refreshHealth(), refreshAi(), refreshStorage()]);
   } finally {
     saving.value = false;
   }
@@ -210,6 +289,51 @@ const logout = async () => {
   display: flex;
   flex-direction: column;
   gap: 18px;
+}
+
+.storage-stats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.storage-stats .label {
+  color: var(--muted);
+}
+
+.storage-stats .value {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.storage-note {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
+.storage-mounts ul,
+.storage-history ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.storage-mounts li,
+.storage-history li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.storage-history span:first-child {
+  font-weight: 600;
 }
 
 .health-list {

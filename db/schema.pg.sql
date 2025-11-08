@@ -55,6 +55,22 @@ CREATE TABLE IF NOT EXISTS health (
   error TEXT
 );
 
+ALTER TABLE apps
+  ADD COLUMN IF NOT EXISTS size_rw BIGINT,
+  ADD COLUMN IF NOT EXISTS size_rootfs BIGINT,
+  ADD COLUMN IF NOT EXISTS volumes_size BIGINT;
+
+CREATE TABLE IF NOT EXISTS app_storage (
+  id BIGSERIAL PRIMARY KEY,
+  app_id BIGINT NOT NULL REFERENCES apps(id) ON DELETE CASCADE,
+  ts TIMESTAMPTZ DEFAULT now(),
+  size_rw BIGINT,
+  size_rootfs BIGINT,
+  volumes_size BIGINT
+);
+
+CREATE INDEX IF NOT EXISTS app_storage_app_ts ON app_storage(app_id, ts DESC);
+
 CREATE OR REPLACE FUNCTION touch_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN

@@ -8,6 +8,7 @@ DockPilot is a secure dashboard for monitoring and curating Dockerized applicati
 - PostgreSQL persistence for users, apps, categories, and health checks
 - Container discovery via Docker Engine API (through tecnativa/docker-socket-proxy)
 - Automatic Nginx virtual host mapping, label-driven metadata, and periodic health checks
+- Per-container storage metrics (RW layer, rootfs, Docker volumes) with history snapshots
 - Optional AI assistance for anomaly hints
 - Nuxt 4 dashboard with responsive cards, category filtering, icon uploads, and theme toggle
 
@@ -40,6 +41,7 @@ See `.env.example` for required configuration. Notable values:
 - `SESSION_SECRET`: 64-byte secret for encrypted cookies (hex or base64).
 - `ADMIN_USERNAME` / `ADMIN_PASSWORD`: bootstrap owner credentials.
 - `HEALTH_INTERVAL_MS`, `HEALTH_TIMEOUT_MS`: tweak health check cadence and timeout.
+- `COLLECTOR_SIZE_INTERVAL_MS`: cadence (ms) for storage polling (defaults to 3 minutes).
 - `AI_ASSISTANT_ENABLED`: enable heuristic insights when paired with `OPENAI_API_KEY`.
 
 ## Development

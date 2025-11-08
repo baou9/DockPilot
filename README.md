@@ -88,6 +88,7 @@ See `.env.example` for required configuration. Notable values:
 - `HEALTH_INTERVAL_MS`, `HEALTH_TIMEOUT_MS`: tweak health check cadence and timeout.
 - `COLLECTOR_SIZE_INTERVAL_MS`: cadence (ms) for storage polling (defaults to 3 minutes).
 - `AI_ASSISTANT_ENABLED`: enable heuristic insights when paired with `OPENAI_API_KEY`.
+- `DOCKER_PROXY_URL`: optional override for the internal docker-socket-proxy URL. Leave unset to rely on the Compose default and avoid clobbering any host `DOCKER_HOST` settings.
 
 ## Development
 

@@ -1,0 +1,84 @@
+#
+# Compose version is optional with Compose V2; removing it avoids deprecation warnings.
+# version: '3.9'
+
+services:
+  socket-proxy:
+    image: tecnativa/docker-socket-proxy:latest
+    restart: unless-stopped
+    environment:
+      CONTAINERS: 1
+      VOLUMES: 1
+      SYSTEM: 1
+      INFO: 1
+      IMAGES: 1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: dockpilot
+      POSTGRES_USER: dockpilot
+      POSTGRES_PASSWORD: dockpilot
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://dockpilot:dockpilot@postgres:5432/dockpilot
+      SESSION_SECRET: ${SESSION_SECRET}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-change-me-now}
+      # Use a different variable name to prevent overriding the host's DOCKER_HOST
+      DOCKER_PROXY_URL: http://socket-proxy:2375
+      NGINX_SITES_DIR: /etc/nginx/sites-enabled
+      NODE_ENV: production
+    volumes:
+      - ./api:/usr/src/app
+      - ./uploads:/usr/src/app/uploads
+      - /etc/nginx/sites-enabled:/etc/nginx/sites-enabled:ro
+    ports:
+      - "6453:6452"
+    depends_on:
+      - postgres
+      - socket-proxy
+
+  ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    environment:
+      NUXT_PUBLIC_API_BASE: http://api:6452
+      NODE_ENV: production
+    volumes:
+      - ./ui:/usr/src/app
+    ports:
+      - "6452:6452"
+    depends_on:
+      - api
+
+  haproxy:
+    image: haproxy:3.2
+    restart: unless-stopped
+    depends_on:
+      - ui
+      - api
+      - socket-proxy
+    ports:
+      - "${HAPROXY_HTTP_PORT:-8080}:80"
+      # If/when TLS is added, expose HTTPS too:
+      # - "${HAPROXY_HTTPS_PORT:-4444}:443"
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      # Uncomment the next line if you enable server-state-file in haproxy.cfg
+      # - haproxy_state:/var/lib/haproxy
+
+volumes:
+  pgdata:
+  # Uncomment if enabling HAProxy server state persistence
+  # haproxy_state:

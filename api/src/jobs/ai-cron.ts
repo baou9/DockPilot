@@ -13,7 +13,7 @@ let insights: AiInsight[] = [];
 let timer: NodeJS.Timeout | undefined;
 
 async function computeInsights() {
-  const { rows } = await q<{
+  const rows = await q<{
     id: number;
     name: string;
     cpu_percent: number | null;

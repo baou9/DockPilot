@@ -111,7 +111,7 @@ async function collectStats() {
       ip: p.IP
     })) || [];
 
-    const { rows } = await withTransaction(async (client) => {
+    const rows = await withTransaction(async (client) => {
       const upsert = await client.query<{ id: number }>(
         `INSERT INTO apps
           (container_id, name, image, status, state, ports, cpu_percent, memory_percent, restarts, app_url, nginx_server_name, icon_emoji, last_seen)

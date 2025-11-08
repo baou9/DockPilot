@@ -24,7 +24,7 @@ export async function resolveSessionUser(req: FastifyRequest) {
     return null;
   }
 
-  const { rows } = await q<SessionUser>(
+  const rows = await q<SessionUser>(
     'SELECT id, username, must_change_password, is_owner FROM users WHERE id = $1',
     [session.userId]
   );

@@ -4,7 +4,7 @@ import { q } from '../db.js';
 let timer: NodeJS.Timeout | undefined;
 
 async function runHealthCheck() {
-  const { rows } = await q<{
+  const rows = await q<{
     id: number;
     app_url: string | null;
   }>(`SELECT id, app_url FROM apps WHERE app_url IS NOT NULL AND app_url <> ''`);

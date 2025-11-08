@@ -28,6 +28,20 @@ type InspectMount = {
   Destination?: string;
 };
 
+type PortsField =
+  | string
+  | { PrivatePort?: number; PublicPort?: number; Type?: string; IP?: string }[]
+  | null
+  | undefined;
+
+interface AppRow {
+  ports?: PortsField;
+  size_rw?: string | number | null | undefined;
+  size_rootfs?: string | number | null | undefined;
+  volumes_size?: string | number | null | undefined;
+  [key: string]: any;
+}
+
 const toNumberOrNull = (value: unknown) => {
   if (value === null || value === undefined) return null;
   const num = Number(value);
@@ -45,7 +59,7 @@ export default async function appsRoutes(fastify: FastifyInstance) {
       reply.code(400);
       return { error: 'invalid app id' };
     }
-    const { rows } = await q(
+    const rows = await q<AppRow>(
       `SELECT a.*, COALESCE(json_agg(json_build_object('id', c.id, 'name', c.name, 'color', c.color))
          FILTER (WHERE c.id IS NOT NULL), '[]') AS categories
        FROM apps a
@@ -68,7 +82,7 @@ export default async function appsRoutes(fastify: FastifyInstance) {
   });
 
   fastify.get('/', async () => {
-    const { rows } = await q(
+    const rows = await q<AppRow>(
       `SELECT a.*, COALESCE(json_agg(json_build_object('id', c.id, 'name', c.name, 'color', c.color))
          FILTER (WHERE c.id IS NOT NULL), '[]') AS categories
        FROM apps a
@@ -77,7 +91,7 @@ export default async function appsRoutes(fastify: FastifyInstance) {
        GROUP BY a.id
        ORDER BY a.pinned DESC, a.name`
     );
-    return rows.map((row: any) => ({
+    return rows.map((row: AppRow) => ({
       ...row,
       ports: typeof row.ports === 'string' ? JSON.parse(row.ports) : row.ports || [],
       size_rw: toNumberOrNull(row.size_rw),
@@ -152,7 +166,7 @@ export default async function appsRoutes(fastify: FastifyInstance) {
       });
     }
 
-    const { rows } = await q('SELECT * FROM apps WHERE id = $1', [appId]);
+    const rows = await q<AppRow>('SELECT * FROM apps WHERE id = $1', [appId]);
     if (!rows[0]) {
       reply.code(404);
       return { error: 'app not found' };
@@ -200,17 +214,23 @@ export default async function appsRoutes(fastify: FastifyInstance) {
     const limitParam = Number(req.query.limit ?? '50');
     const limit = Number.isFinite(limitParam) ? Math.min(Math.max(Math.floor(limitParam), 1), 500) : 50;
 
-    const appResult = await q<{ id: number; container_id: string; size_rw: number | null; size_rootfs: number | null; volumes_size: number | null }>(
+    const appResult = await q<{
+      id: number;
+      container_id: string;
+      size_rw: number | string | null;
+      size_rootfs: number | string | null;
+      volumes_size: number | string | null;
+    }>(
       'SELECT id, container_id, size_rw, size_rootfs, volumes_size FROM apps WHERE id = $1',
       [appId]
     );
-    const appRow = appResult.rows[0];
+    const appRow = appResult[0];
     if (!appRow) {
       reply.code(404);
       return { error: 'app not found' };
     }
 
-    const historyResult = await q(
+    const historyResult = await q<AppRow>(
       `SELECT id, app_id, ts, size_rw, size_rootfs, volumes_size
          FROM app_storage
         WHERE app_id = $1
@@ -219,7 +239,7 @@ export default async function appsRoutes(fastify: FastifyInstance) {
       [appId, limit]
     );
 
-    const history = historyResult.rows.map((entry: any) => ({
+    const history = historyResult.map((entry: AppRow) => ({
       ...entry,
       size_rw: toNumberOrNull(entry.size_rw),
       size_rootfs: toNumberOrNull(entry.size_rootfs),

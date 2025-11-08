@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import { q } from './db.js';
 
 export async function ensureOwnerUser() {
-  const { rows } = await q<{ count: string }>('SELECT COUNT(*)::text AS count FROM users');
+  const rows = await q<{ count: string }>('SELECT COUNT(*)::text AS count FROM users');
   if (rows[0] && rows[0].count !== '0') {
     return;
   }

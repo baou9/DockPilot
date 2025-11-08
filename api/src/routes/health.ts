@@ -15,7 +15,7 @@ export default async function healthRoutes(fastify: FastifyInstance) {
       return { error: 'invalid app id' };
     }
 
-    const { rows } = await q(
+    const rows = await q(
       `SELECT id, ts, ok, latency_ms, status_code, error
        FROM health
        WHERE app_id = $1

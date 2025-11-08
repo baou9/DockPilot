@@ -34,7 +34,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
       return { error: 'Username and password required' };
     }
 
-    const { rows } = await q<{
+    const rows = await q<{
       id: number;
       username: string;
       password_hash: string;
@@ -75,7 +75,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
       return { error: 'Both old and new password required' };
     }
 
-    const { rows } = await q<{ password_hash: string }>('SELECT password_hash FROM users WHERE id = $1', [user.id]);
+    const rows = await q<{ password_hash: string }>('SELECT password_hash FROM users WHERE id = $1', [user.id]);
     const existing = rows[0];
     if (!existing || !(await bcrypt.compare(oldPassword, existing.password_hash))) {
       reply.code(400);
@@ -97,7 +97,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
     }
 
     const hash = await bcrypt.hash(password, 12);
-    const { rows } = await q<{ id: number }>(
+    const rows = await q<{ id: number }>(
       `INSERT INTO users (username, password_hash, must_change_password, is_owner)
        VALUES ($1, $2, true, $3)
        RETURNING id`,

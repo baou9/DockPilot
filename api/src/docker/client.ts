@@ -3,7 +3,7 @@ import { fetch } from 'undici';
 // Use a distinct environment variable for the socket proxy to avoid conflicts
 const dockerHost = process.env.DOCKER_PROXY_URL || 'http://socket-proxy:2375';
 
-async function handleResponse(res: Response) {
+async function handleResponse(res: any) {
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`Docker API error ${res.status}: ${text}`);

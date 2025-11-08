@@ -77,7 +77,7 @@ export default async function appsRoutes(fastify: FastifyInstance) {
        GROUP BY a.id
        ORDER BY a.pinned DESC, a.name`
     );
-    return rows.map((row) => ({
+    return rows.map((row: any) => ({
       ...row,
       ports: typeof row.ports === 'string' ? JSON.parse(row.ports) : row.ports || [],
       size_rw: toNumberOrNull(row.size_rw),
@@ -219,7 +219,7 @@ export default async function appsRoutes(fastify: FastifyInstance) {
       [appId, limit]
     );
 
-    const history = historyResult.rows.map((entry) => ({
+    const history = historyResult.rows.map((entry: any) => ({
       ...entry,
       size_rw: toNumberOrNull(entry.size_rw),
       size_rootfs: toNumberOrNull(entry.size_rootfs),

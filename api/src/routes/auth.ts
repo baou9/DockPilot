@@ -48,7 +48,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
       return { error: 'Invalid credentials' };
     }
 
-    req.session.set('userId', user.id);
+    (req.session as any).set('userId', user.id);
     return {
       must_change_password: user.must_change_password
     };

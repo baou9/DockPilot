@@ -1,4 +1,4 @@
-import { Pool, QueryResult, QueryResultRow } from 'pg';
+import { Pool, type QueryResultRow, type QueryConfig, type QueryResult } from 'pg';
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -12,30 +12,33 @@ export const pool = new Pool({
 });
 
 export type Queryable = {
-  query: <T = unknown, I extends unknown[] = unknown[]>(text: string, params?: I) => Promise<QueryResult<T>>;
+  query: <T extends QueryResultRow = QueryResultRow, I extends unknown[] = unknown[]>(
+    text: string | QueryConfig<I>,
+    params?: I
+  ) => Promise<QueryResult<T>>;
 };
 
 export async function query<T extends QueryResultRow = QueryResultRow>(
-  text: string,
+  text: string | QueryConfig<any[]>,
   params?: any[]
 ): Promise<T[]> {
-  const res = await pool.query<T>(text, params);
+  const res = await pool.query<T>(text as any, params as any);
   return res.rows;
 }
 
 export async function one<T extends QueryResultRow = QueryResultRow>(
-  text: string,
+  text: string | QueryConfig<any[]>,
   params?: any[]
 ): Promise<T | null> {
-  const rows = await query<T>(text, params);
+  const rows = await query<T>(text as any, params as any);
   return rows[0] ?? null;
 }
 
 export async function q<T extends QueryResultRow = QueryResultRow, I extends unknown[] = unknown[]>(
-  text: string,
+  text: string | QueryConfig<I>,
   params?: I
 ): Promise<T[]> {
-  return query<T>(text, params);
+  return query<T>(text as any, params as any);
 }
 
 export async function withTransaction<T>(fn: (client: Queryable) => Promise<T>) {

@@ -63,14 +63,16 @@ services:
       - api
 
   haproxy:
-    image: haproxy:3.0
+    image: haproxy:3.2
     restart: unless-stopped
     depends_on:
       - ui
       - api
       - socket-proxy
     ports:
-      - "80:80"
+      - "${HAPROXY_HTTP_PORT:-8080}:80"
+      # If/when TLS is added, expose HTTPS too:
+      # - "${HAPROXY_HTTPS_PORT:-8443}:443"
     volumes:
       - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
       # Uncomment the next line if you enable server-state-file in haproxy.cfg

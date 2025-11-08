@@ -50,7 +50,8 @@ Follow the steps below to install and run DockPilot from a clean machine:
    ```
    Confirm all containers are running without errors.
 8. **Access DockPilot**
-   - Browse to `http://localhost:6452` (or your reverse proxy URL).
+   - Browse to `http://localhost:8080` (or `http://localhost:<HAPROXY_HTTP_PORT>` if you overrode the port) to reach the HAProxy front end.
+   - Alternatively, access the UI service directly at `http://localhost:6452` if you prefer to bypass HAProxy in development.
    - Log in using `ADMIN_USERNAME` / `ADMIN_PASSWORD` from `.env` and complete the forced password change.
 
 After installation, optional development workflows (e.g., running `npm run dev` inside `api` and `ui`) remain available.
@@ -92,6 +93,7 @@ If you already have the prerequisites and configuration in place, the condensed 
 | `postgres` | PostgreSQL 16 database. |
 | `api` | Fastify backend on port 6452 (exposed as 6453 locally). |
 | `ui` | Nuxt 4 frontend on port 6452. |
+| `haproxy` | Optional edge proxy exposing the UI/API on host port `HAPROXY_HTTP_PORT` (defaults to 8080). |
 
 ## Environment Variables
 
@@ -103,6 +105,7 @@ See `.env.example` for required configuration. Notable values:
 - `COLLECTOR_SIZE_INTERVAL_MS`: cadence (ms) for storage polling (defaults to 3 minutes).
 - `AI_ASSISTANT_ENABLED`: enable heuristic insights when paired with `OPENAI_API_KEY`.
 - `DOCKER_PROXY_URL`: optional override for the internal docker-socket-proxy URL. Leave unset to rely on the Compose default and avoid clobbering any host `DOCKER_HOST` settings.
+- `HAPROXY_HTTP_PORT` / `HAPROXY_HTTPS_PORT`: host-side bindings for the HAProxy service (defaults 8080/8443). Adjust if port 80/443 are occupied.
 
 ## Development
 

@@ -1,6 +1,6 @@
 # DockPilot
 
-DockPilot is a secure dashboard for monitoring and curating Dockerized applications. It discovers running containers through a docker-socket-proxy, stores metadata in PostgreSQL, and exposes a modern Nuxt-based UI with light/dark theming.
+DockPilot is a secure dashboard for monitoring and curating Dockerized applications. It discovers running containers through a docker-socket-proxy, stores metadata in PostgreSQL, and exposes a modern Nuxt 4-based UI with light/dark theming.
 
 ## Features
 
@@ -9,7 +9,7 @@ DockPilot is a secure dashboard for monitoring and curating Dockerized applicati
 - Container discovery via Docker Engine API (through tecnativa/docker-socket-proxy)
 - Automatic Nginx virtual host mapping, label-driven metadata, and periodic health checks
 - Optional AI assistance for anomaly hints
-- Nuxt 3 dashboard with responsive cards, category filtering, icon uploads, and theme toggle
+- Nuxt 4 dashboard with responsive cards, category filtering, icon uploads, and theme toggle
 
 ## Getting Started
 
@@ -31,7 +31,7 @@ DockPilot is a secure dashboard for monitoring and curating Dockerized applicati
 | `socket-proxy` | Secure proxy to Docker Engine (no direct docker.sock mounts). |
 | `postgres` | PostgreSQL 16 database. |
 | `api` | Fastify backend on port 3000 (exposed as 3001 locally). |
-| `ui` | Nuxt 3 frontend on port 3000. |
+| `ui` | Nuxt 4 frontend on port 3000. |
 
 ## Environment Variables
 

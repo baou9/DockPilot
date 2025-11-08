@@ -10,8 +10,8 @@
   },
   "dependencies": {
     "@headlessui/vue": "^1.7.22",
-    "@nuxtjs/color-mode": "^3.3.2",
-    "nuxt": "^3.11.2"
+    "@nuxtjs/color-mode": "^4.0.0",
+    "nuxt": "^4.0.0-rc3"
   },
   "devDependencies": {
     "sass": "^1.77.5",

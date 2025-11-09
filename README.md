@@ -31,27 +31,18 @@ Follow the steps below to install and run DockPilot from a clean machine:
    ```
    Edit `.env` and provide secure values for `SESSION_SECRET`, `ADMIN_PASSWORD`, `APP_PORT`, and optional Docker / AI settings.
 4. **Prepare PostgreSQL**
-   - If you already have a PostgreSQL instance, ensure the database defined by `DATABASE_URL` exists and is reachable from the Docker host. Set `USE_EXTERNAL_POSTGRES=true` in `.env` and skip the bundled database profile when starting Compose.
-   - Otherwise, use the bundled `postgres` service (enabled via the `local-db` Compose profile).
+   - DockPilot relies on an existing PostgreSQL instance. Create the database referenced by `DATABASE_URL` and ensure the container can reach it over the network. When Docker runs on the same host as PostgreSQL, `host.docker.internal` (macOS/Windows) or the host's LAN IP (Linux) is typically the correct hostname.
 5. **Apply the database schema**
    ```bash
    psql "$DATABASE_URL" -f db/schema.pg.sql
    ```
    This initializes tables, triggers, and optional storage history support.
 6. **Build and start the Docker Compose stack**
-
-   **A. With the bundled PostgreSQL container**
    ```bash
-   docker compose --profile app --profile local-db up -d --build
+   docker compose up -d --build
    ```
 
-   **B. With an existing PostgreSQL instance**
-   ```bash
-   # Ensure DATABASE_URL points at your external database and USE_EXTERNAL_POSTGRES=true
-   docker compose --profile app up -d --build
-   ```
-
-   The command launches a single `dockpilot-app` container that hosts the API, UI, and lightweight gateway. Add the `local-db` profile only when you want Compose to run PostgreSQL for you.
+   This launches the single `dockpilot-app` container that hosts the API, UI, and lightweight gateway.
 7. **Verify service health**
    ```bash
    docker compose ps
@@ -71,10 +62,8 @@ If you update container dependencies (for example, adjusting `api/package.json` 
 ```bash
 docker compose down
 docker compose build --no-cache
-docker compose --profile app --profile local-db up -d
+docker compose up -d
 ```
-
-Remove the `local-db` profile flag if you rely on an external PostgreSQL instance.
 
 ## Getting Started
 
@@ -85,9 +74,9 @@ If you already have the prerequisites and configuration in place, the condensed 
    psql "$DATABASE_URL" -f db/schema.pg.sql
    ```
 2. Copy `.env.example` to `.env` and fill in secrets.
-3. Build and launch the stack (choose the appropriate profile set):
+3. Build and launch the stack:
    ```bash
-   docker compose --profile app --profile local-db up -d --build
+   docker compose up -d --build
    ```
 4. Visit the UI and log in with the owner credentials from `.env`. Change the password on first login.
 
@@ -96,15 +85,13 @@ If you already have the prerequisites and configuration in place, the condensed 
 | Service | Description |
 | ------- | ----------- |
 | `app` | Combined container that runs the API, UI (Nuxt Nitro server), and Express gateway on port 8080. |
-| `postgres` | PostgreSQL 16 database, enabled only when the `local-db` profile is used. |
 
 ## Environment Variables
 
 See `.env.example` for required configuration. Notable values:
 
 - `APP_PORT`: host port that exposes the combined gateway (defaults to 8080).
-- `DATABASE_URL`: PostgreSQL connection string. Leave empty when using the bundled database and it will default to the Compose service.
-- `USE_EXTERNAL_POSTGRES`: set to `true` when you do **not** want Compose to start PostgreSQL.
+- `DATABASE_URL`: PostgreSQL connection string that points to your existing database. Ensure the hostname is reachable from inside the container (for example, `host.docker.internal`).
 - `SESSION_SECRET`: 64-byte secret for encrypted cookies (hex or base64).
 - `ADMIN_USERNAME` / `ADMIN_PASSWORD`: bootstrap owner credentials.
 - `HEALTH_INTERVAL_MS`, `HEALTH_TIMEOUT_MS`: tweak health check cadence and timeout.

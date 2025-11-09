@@ -255,6 +255,10 @@ async function collectStorageSizes() {
 }
 
 export function startCollector() {
+  if (!process.env.DOCKER_PROXY_URL) {
+    console.warn('Docker metrics collector disabled: DOCKER_PROXY_URL is not set.');
+    return;
+  }
   const interval = Number(process.env.COLLECTOR_INTERVAL_MS || 30_000);
   const run = async () => {
     try {

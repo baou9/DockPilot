@@ -1,19 +1,28 @@
-#
-# Compose version is optional with Compose V2; removing it avoids deprecation warnings.
-# version: '3.9'
-
 services:
-  socket-proxy:
-    image: tecnativa/docker-socket-proxy:latest
-    restart: unless-stopped
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dockpilot-app
+    env_file: .env
     environment:
-      CONTAINERS: 1
-      VOLUMES: 1
-      SYSTEM: 1
-      INFO: 1
-      IMAGES: 1
+      DATABASE_URL: ${DATABASE_URL:-postgresql://dockpilot:dockpilot@postgres:5432/dockpilot}
+      NODE_ENV: production
+      PORT: ${APP_PORT:-8080}
+      API_PORT: 3001
+      UI_PORT: 3000
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    restart: unless-stopped
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./uploads:/app/uploads
+    profiles:
+      - app
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8080/healthz || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
 
   postgres:
     image: postgres:16
@@ -24,87 +33,10 @@ services:
       POSTGRES_PASSWORD: dockpilot
     volumes:
       - pgdata:/var/lib/postgresql/data
-
-  api:
-    build:
-      context: ./api
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    environment:
-      PORT: 6453
-      DATABASE_URL: postgresql://dockpilot:dockpilot@postgres:5432/dockpilot
-      SESSION_SECRET: ${SESSION_SECRET:-6d6f636b73657373696f6e7365637265746d6f636b73657373696f6e73656372}
-      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-change-me-now}
-      # Use a different variable name to prevent overriding the host's DOCKER_HOST
-      DOCKER_PROXY_URL: http://socket-proxy:2375
-      NGINX_SITES_DIR: /etc/nginx/sites-enabled
-      NODE_ENV: production
-    volumes:
-      - ./uploads:/usr/src/app/uploads
-      - /etc/nginx/sites-enabled:/etc/nginx/sites-enabled:ro
-    expose:
-      - "6453"
-    depends_on:
-      - postgres
-      - socket-proxy
-    healthcheck:
-      test:
-        - CMD-SHELL
-        - >-
-          node -e "fetch('http://localhost:6453/health')
-          .then(r => { if (!r.ok) process.exit(1); })
-          .catch(() => process.exit(1));"
-      interval: 10s
-      timeout: 5s
-      retries: 6
-      start_period: 10s
-
-  ui:
-    build:
-      context: ./ui
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    environment:
-      NUXT_PUBLIC_API_BASE: http://api:6453
-      NODE_ENV: production
-    expose:
-      - "6452"
-    depends_on:
-      api:
-        condition: service_healthy
-    healthcheck:
-      test:
-        - CMD-SHELL
-        - >-
-          node -e "fetch('http://localhost:6452/')
-          .then(r => { if (!r.ok) process.exit(1); })
-          .catch(() => process.exit(1));"
-      interval: 10s
-      timeout: 5s
-      retries: 6
-      start_period: 15s
-
-  haproxy:
-    image: haproxy:3.2
-    restart: unless-stopped
-    depends_on:
-      api:
-        condition: service_healthy
-      ui:
-        condition: service_healthy
-      socket-proxy:
-        condition: service_started
     ports:
-      - "${HAPROXY_HTTP_PORT:-8080}:80"
-      # If/when TLS is added, expose HTTPS too:
-      # - "${HAPROXY_HTTPS_PORT:-4444}:443"
-    volumes:
-      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
-      # Uncomment the next line if you enable server-state-file in haproxy.cfg
-      # - haproxy_state:/var/lib/haproxy
+      - "5432:5432"
+    profiles:
+      - local-db
 
 volumes:
   pgdata:
-  # Uncomment if enabling HAProxy server state persistence
-  # haproxy_state:

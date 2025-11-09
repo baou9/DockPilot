@@ -9,9 +9,12 @@ export default defineNuxtConfig({
     fallback: 'light',
     classSuffix: ''
   },
+  nitro: {
+    preset: 'node'
+  },
   runtimeConfig: {
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:6453'
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || '/api'
     }
   }
 });

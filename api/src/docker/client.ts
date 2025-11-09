@@ -1,7 +1,7 @@
 import { fetch } from 'undici';
 
 // Use a distinct environment variable for the socket proxy to avoid conflicts
-const dockerHost = process.env.DOCKER_PROXY_URL || 'http://socket-proxy:2375';
+const dockerHost = process.env.DOCKER_PROXY_URL;
 
 async function handleResponse(res: any) {
   if (!res.ok) {
@@ -16,6 +16,9 @@ async function handleResponse(res: any) {
 }
 
 export async function dockerGet<T>(path: string, query?: Record<string, string | number | boolean>) {
+  if (!dockerHost) {
+    throw new Error('Docker integration is disabled. Set DOCKER_PROXY_URL to enable it.');
+  }
   const url = new URL(path, dockerHost);
   if (query) {
     for (const [key, value] of Object.entries(query)) {
@@ -32,6 +35,9 @@ export async function dockerGet<T>(path: string, query?: Record<string, string |
 }
 
 export async function dockerStream(path: string) {
+  if (!dockerHost) {
+    throw new Error('Docker integration is disabled. Set DOCKER_PROXY_URL to enable it.');
+  }
   const url = new URL(path, dockerHost);
   const res = await fetch(url, { method: 'GET' });
   if (!res.ok) {

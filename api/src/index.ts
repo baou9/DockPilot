@@ -82,10 +82,13 @@ app.register(appsRoutes, { prefix: '/apps' });
 app.register(healthRoutes, { prefix: '/health' });
 app.register(aiRoutes, { prefix: '/ai' });
 
-app.get('/status', async () => ({
+const statusHandler = async () => ({
   ok: true,
   ai: isAiEnabled()
-}));
+});
 
-const port = Number(process.env.PORT || 6452);
+app.get('/status', statusHandler);
+app.get('/health', statusHandler);
+
+const port = Number(process.env.PORT || 6453);
 await app.listen({ port, host: '0.0.0.0' });

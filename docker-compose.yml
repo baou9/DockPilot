@@ -30,6 +30,7 @@ services:
       context: ./api
       dockerfile: Dockerfile
     environment:
+      PORT: 6453
       DATABASE_URL: postgresql://dockpilot:dockpilot@postgres:5432/dockpilot
       SESSION_SECRET: ${SESSION_SECRET}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
@@ -39,11 +40,10 @@ services:
       NGINX_SITES_DIR: /etc/nginx/sites-enabled
       NODE_ENV: production
     volumes:
-      - ./api:/usr/src/app
       - ./uploads:/usr/src/app/uploads
       - /etc/nginx/sites-enabled:/etc/nginx/sites-enabled:ro
-    ports:
-      - "6453:6452"
+    expose:
+      - "6453"
     depends_on:
       - postgres
       - socket-proxy
@@ -53,12 +53,10 @@ services:
       context: ./ui
       dockerfile: Dockerfile
     environment:
-      NUXT_PUBLIC_API_BASE: http://api:6452
+      NUXT_PUBLIC_API_BASE: http://api:6453
       NODE_ENV: production
-    volumes:
-      - ./ui:/usr/src/app
-    ports:
-      - "6452:6452"
+    expose:
+      - "6452"
     depends_on:
       - api
 

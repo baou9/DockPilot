@@ -66,13 +66,15 @@ After installation, optional development workflows (e.g., running `npm run dev` 
 
 ### Rebuilding after dependency or Dockerfile updates
 
-If you update container dependencies (for example, adjusting `api/package.json` or the root `Dockerfile`), rebuild the stack to ensure the changes take effect:
+If you update container dependencies (for example, adjusting `api/package.json` or the root `Dockerfile`), rebuild the stack to ensure the changes take effect. Prior deployments from the legacy multi-container layout should first clear the old auxiliary services:
 
 ```bash
-docker compose down
+docker compose down --remove-orphans
 docker compose build --no-cache
 docker compose --profile app --profile local-db up -d
 ```
+
+Removing orphans ensures the retired `haproxy`, `postgres`, and `socket-proxy` containers from earlier releases do not linger before you bring up the consolidated `app` service.
 
 Remove the `local-db` profile flag if you rely on an external PostgreSQL instance.
 

@@ -6,7 +6,7 @@ services:
     image: dockpilot-app
     env_file: .env
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql://dockpilot:dockpilot@postgres:5432/dockpilot}
+      DATABASE_URL: ${DATABASE_URL}
       NODE_ENV: production
       PORT: ${APP_PORT:-8080}
       API_PORT: 3001
@@ -16,27 +16,8 @@ services:
     restart: unless-stopped
     volumes:
       - ./uploads:/app/uploads
-    profiles:
-      - app
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8080/healthz || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 10
-
-  postgres:
-    image: postgres:16
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: dockpilot
-      POSTGRES_USER: dockpilot
-      POSTGRES_PASSWORD: dockpilot
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    profiles:
-      - local-db
-
-volumes:
-  pgdata:

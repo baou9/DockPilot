@@ -91,7 +91,7 @@ If you already have the prerequisites and configuration in place, the condensed 
 | ------- | ----------- |
 | `socket-proxy` | Secure proxy to Docker Engine (no direct docker.sock mounts). |
 | `postgres` | PostgreSQL 16 database. |
-| `api` | Fastify backend on port 6452 (exposed as 6453 locally). |
+| `api` | Fastify backend on port 6453. |
 | `ui` | Nuxt 4 frontend on port 6452. |
 | `haproxy` | Optional edge proxy exposing the UI/API on host port `HAPROXY_HTTP_PORT` (defaults to 8080). |
 

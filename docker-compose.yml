@@ -29,9 +29,11 @@ services:
     build:
       context: ./api
       dockerfile: Dockerfile
+    restart: unless-stopped
     environment:
+      PORT: 6453
       DATABASE_URL: postgresql://dockpilot:dockpilot@postgres:5432/dockpilot
-      SESSION_SECRET: ${SESSION_SECRET}
+      SESSION_SECRET: ${SESSION_SECRET:-6d6f636b73657373696f6e7365637265746d6f636b73657373696f6e73656372}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-change-me-now}
       # Use a different variable name to prevent overriding the host's DOCKER_HOST
@@ -39,36 +41,60 @@ services:
       NGINX_SITES_DIR: /etc/nginx/sites-enabled
       NODE_ENV: production
     volumes:
-      - ./api:/usr/src/app
       - ./uploads:/usr/src/app/uploads
       - /etc/nginx/sites-enabled:/etc/nginx/sites-enabled:ro
-    ports:
-      - "6453:6452"
+    expose:
+      - "6453"
     depends_on:
       - postgres
       - socket-proxy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          node -e "fetch('http://localhost:6453/health')
+          .then(r => { if (!r.ok) process.exit(1); })
+          .catch(() => process.exit(1));"
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
 
   ui:
     build:
       context: ./ui
       dockerfile: Dockerfile
+    restart: unless-stopped
     environment:
-      NUXT_PUBLIC_API_BASE: http://api:6452
+      NUXT_PUBLIC_API_BASE: http://api:6453
       NODE_ENV: production
-    volumes:
-      - ./ui:/usr/src/app
-    ports:
-      - "6452:6452"
+    expose:
+      - "6452"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          node -e "fetch('http://localhost:6452/')
+          .then(r => { if (!r.ok) process.exit(1); })
+          .catch(() => process.exit(1));"
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
 
   haproxy:
     image: haproxy:3.2
     restart: unless-stopped
     depends_on:
-      - ui
-      - api
-      - socket-proxy
+      api:
+        condition: service_healthy
+      ui:
+        condition: service_healthy
+      socket-proxy:
+        condition: service_started
     ports:
       - "${HAPROXY_HTTP_PORT:-8080}:80"
       # If/when TLS is added, expose HTTPS too:
